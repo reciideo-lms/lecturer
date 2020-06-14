@@ -1,6 +1,9 @@
 name: Docker master build
 
-on: [push]
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   build:
