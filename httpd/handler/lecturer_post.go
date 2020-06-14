@@ -27,8 +27,13 @@ func LecturerPost(repo *lecturer.Repo) gin.HandlerFunc {
 			Forename: requestBody.Forename,
 			Surname:  requestBody.Surname,
 		}
-		repo.Add(item)
-
-		c.JSON(http.StatusOK, item)
+		result, err := repo.Add(item)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+		} else {
+			c.JSON(http.StatusOK, result)
+		}
 	}
 }

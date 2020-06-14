@@ -3,14 +3,16 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/reciideo-lms/lecturer/httpd/handler"
+	"github.com/reciideo-lms/lecturer/platform"
 	"github.com/reciideo-lms/lecturer/platform/lecturer"
 	"log"
 )
 
 func main() {
 	r := gin.Default()
+	db := platform.InitDB()
 
-	repo := lecturer.New()
+	repo := lecturer.New(db)
 
 	r.GET("/health", handler.HealthGet())
 

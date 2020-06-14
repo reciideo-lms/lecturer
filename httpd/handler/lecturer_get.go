@@ -8,7 +8,13 @@ import (
 
 func LecturerGet(repo *lecturer.Repo) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		results := repo.GetAll()
-		c.JSON(http.StatusOK, results)
+		results, err := repo.GetAll()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+		} else {
+			c.JSON(http.StatusOK, results)
+		}
 	}
 }
