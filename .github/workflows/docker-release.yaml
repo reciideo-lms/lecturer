@@ -9,8 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Setup Hub
-        uses: Geertvdc/setup-hub@v1.0.0
+      - uses: olegtarasov/get-tag@v2
+        id: tagName
       - name: docker login
         env:
           DOCKER_USER: ${{ secrets.DOCKER_USER }}
@@ -19,11 +19,11 @@ jobs:
           docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
       - name: docker build
         run: |
-          docker build . -t ${{ secrets.DOCKER_IMAGE_NAME }}:$(hub release -L 1)
+          docker build . -t ${{ secrets.DOCKER_IMAGE_NAME }}:$GIT_TAG_NAME
       - name: docker tag latest
         run: |
-          docker tag ${{ secrets.DOCKER_IMAGE_NAME }}:$(hub release -L 1) ${{ secrets.DOCKER_IMAGE_NAME }}:latest
+          docker tag ${{ secrets.DOCKER_IMAGE_NAME }}:$GIT_TAG_NAME ${{ secrets.DOCKER_IMAGE_NAME }}:latest
       - name: docker push
         run: |
-          docker push ${{ secrets.DOCKER_IMAGE_NAME }}:$(hub release -L 1)
+          docker push ${{ secrets.DOCKER_IMAGE_NAME }}:$GIT_TAG_NAME
           docker push ${{ secrets.DOCKER_IMAGE_NAME }}:latest
