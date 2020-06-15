@@ -7,8 +7,9 @@ import (
 )
 
 type lecturerPostRequest struct {
-	Forename string `json:"forename"`
-	Surname  string `json:"surname"`
+	Forename    string `json:"forename"`
+	Surname     string `json:"surname"`
+	Description string `json:"description"`
 }
 
 func LecturerPost(repo *lecturer.Repo) gin.HandlerFunc {
@@ -24,8 +25,9 @@ func LecturerPost(repo *lecturer.Repo) gin.HandlerFunc {
 		}
 
 		item := lecturer.Lecturer{
-			Forename: requestBody.Forename,
-			Surname:  requestBody.Surname,
+			Forename:    requestBody.Forename,
+			Surname:     requestBody.Surname,
+			Description: requestBody.Description,
 		}
 		result, err := repo.Add(item)
 		if err != nil {

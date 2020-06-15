@@ -2,12 +2,20 @@ package lecturer
 
 import (
 	"database/sql"
+	"github.com/google/uuid"
+	"github.com/reciideo-lms/lecturer/utils"
 	"log"
+	"time"
 )
 
 type Lecturer struct {
-	Forename string `json:"forename"`
-	Surname  string `json:"surname"`
+	Id          uuid.UUID `json:"id"`
+	Forename    string    `json:"forename"`
+	Surname     string    `json:"surname"`
+	Username    string    `json:"username"`
+	Description string    `json:"description"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+	CreatedAt   time.Time `json:"createdAt"`
 }
 
 type Repo struct {
@@ -15,7 +23,15 @@ type Repo struct {
 }
 
 func New(db *sql.DB) *Repo {
-	_, err := db.Exec("CREATE TABLE IF NOT EXISTS lecturer (forename TEXT, surname TEXT)")
+	_, err := db.Exec(` CREATE TABLE IF NOT EXISTS lecturer (
+ 		id UUID PRIMARY KEY UNIQUE,
+ 		forename TEXT,
+ 		surname TEXT,
+ 		username TEXT UNIQUE,
+ 		description TEXT,
+ 		updatedAt TIMESTAMP,
+ 		createdAt TIMESTAMP
+	 )`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -25,10 +41,19 @@ func New(db *sql.DB) *Repo {
 }
 
 func (r *Repo) Add(item Lecturer) (Lecturer, error) {
+	item.Id = uuid.New()
+	username, err := slugUsername(item.Forename, item.Surname)
+	if err != nil {
+		return Lecturer{}, err
+	}
+	item.Username = username
+	item.CreatedAt = time.Now()
+	item.UpdatedAt = item.CreatedAt
+
 	sqlStatement := `
-		INSERT INTO lecturer (forename, surname)
-		VALUES ($1, $2)`
-	_, err := r.DB.Exec(sqlStatement, item.Forename, item.Surname)
+		INSERT INTO lecturer (id, forename, surname, username, description, updatedAt, createdAt)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)`
+	_, err = r.DB.Exec(sqlStatement, item.Id, item.Forename, item.Surname, item.Username, item.Description, item.UpdatedAt, item.CreatedAt)
 	if err != nil {
 		return Lecturer{}, err
 	}
@@ -44,7 +69,7 @@ func (r *Repo) GetAll() ([]*Lecturer, error) {
 	items := make([]*Lecturer, 0)
 	for rows.Next() {
 		item := new(Lecturer)
-		err = rows.Scan(&item.Forename, &item.Surname)
+		err = rows.Scan(&item.Id, &item.Forename, &item.Surname, &item.Username, &item.Description, &item.UpdatedAt, &item.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -56,4 +81,16 @@ func (r *Repo) GetAll() ([]*Lecturer, error) {
 	}
 
 	return items, nil
+}
+
+func slugUsername(forename string, surname string) (string, error) {
+	sluggedForename, err := utils.SlugString(forename)
+	if err != nil {
+		return "", err
+	}
+	sluggedSurname, err := utils.SlugString(surname)
+	if err != nil {
+		return "", err
+	}
+	return utils.ConcatStrings(sluggedForename, sluggedSurname), nil
 }
