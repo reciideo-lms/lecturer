@@ -9,13 +9,14 @@ import (
 )
 
 type Lecturer struct {
-	Id          uuid.UUID `json:"id"`
-	Forename    string    `json:"forename"`
-	Surname     string    `json:"surname"`
-	Username    string    `json:"username"`
-	Description string    `json:"description"`
-	UpdatedAt   time.Time `json:"updatedAt"`
-	CreatedAt   time.Time `json:"createdAt"`
+	Id          uuid.UUID  `json:"id"`
+	Forename    string     `json:"forename"`
+	Surname     string     `json:"surname"`
+	Username    string     `json:"username"`
+	Description string     `json:"description"`
+	Platforms   []Platform `json:"platforms"`
+	UpdatedAt   time.Time  `json:"updatedAt"`
+	CreatedAt   time.Time  `json:"createdAt"`
 }
 
 type Repo struct {
@@ -23,17 +24,22 @@ type Repo struct {
 }
 
 func New(db *sql.DB) *Repo {
-	_, err := db.Exec(` CREATE TABLE IF NOT EXISTS lecturer (
+	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS lecturer (
  		id UUID PRIMARY KEY UNIQUE,
- 		forename TEXT,
- 		surname TEXT,
- 		username TEXT UNIQUE,
+ 		forename TEXT NOT NULL,
+ 		surname TEXT NOT NULL,
+ 		username TEXT UNIQUE NOT NULL,
  		description TEXT,
  		updatedAt TIMESTAMP,
  		createdAt TIMESTAMP
-	 )`)
+	 );
+	 `)
 	if err != nil {
 		log.Fatal(err)
+	}
+	err = initTable(db)
+	if err != nil {
+		log.Fatalln(err)
 	}
 	return &Repo{
 		DB: db,
@@ -57,6 +63,17 @@ func (r *Repo) Add(item Lecturer) (Lecturer, error) {
 	if err != nil {
 		return Lecturer{}, err
 	}
+
+	platforms := make([]Platform, 0)
+	for _, platform := range item.Platforms {
+		processed, err := r.addPlatform(item, platform)
+		if err != nil {
+			return Lecturer{}, err
+		}
+		platforms = append(platforms, processed)
+	}
+	item.Platforms = platforms
+
 	return item, nil
 }
 
@@ -70,6 +87,10 @@ func (r *Repo) GetAll() ([]*Lecturer, error) {
 	for rows.Next() {
 		item := new(Lecturer)
 		err = rows.Scan(&item.Id, &item.Forename, &item.Surname, &item.Username, &item.Description, &item.UpdatedAt, &item.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		item.Platforms, err = r.getPlatforms(item)
 		if err != nil {
 			return nil, err
 		}

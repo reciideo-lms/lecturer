@@ -7,9 +7,15 @@ import (
 )
 
 type lecturerPostRequest struct {
-	Forename    string `json:"forename"`
-	Surname     string `json:"surname"`
-	Description string `json:"description"`
+	Forename    string                         `json:"forename"`
+	Surname     string                         `json:"surname"`
+	Description string                         `json:"description,omitempty"`
+	Platforms   []lecturerPlatformsPostRequest `json:"platforms,omitempty"`
+}
+
+type lecturerPlatformsPostRequest struct {
+	Platform string `json:"platform"`
+	URL      string `json:"url"`
 }
 
 func LecturerPost(repo *lecturer.Repo) gin.HandlerFunc {
@@ -24,10 +30,20 @@ func LecturerPost(repo *lecturer.Repo) gin.HandlerFunc {
 			return
 		}
 
+		var platforms []lecturer.Platform
+		for _, platform := range requestBody.Platforms {
+			platform := lecturer.Platform{
+				Platform: platform.Platform,
+				URL:      platform.URL,
+			}
+			platforms = append(platforms, platform)
+		}
+
 		item := lecturer.Lecturer{
 			Forename:    requestBody.Forename,
 			Surname:     requestBody.Surname,
 			Description: requestBody.Description,
+			Platforms:   platforms,
 		}
 		result, err := repo.Add(item)
 		if err != nil {
