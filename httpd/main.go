@@ -18,6 +18,7 @@ func main() {
 
 	l := r.Group("/lecturer")
 	l.GET("/", handler.LecturerGet(repo))
+	l.GET("/:id", handler.LecturerGetSingle(repo))
 	l.POST("/", handler.LecturerPost(repo))
 
 	err := r.Run()

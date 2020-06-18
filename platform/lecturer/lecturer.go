@@ -2,6 +2,7 @@ package lecturer
 
 import (
 	"database/sql"
+	"errors"
 	"github.com/google/uuid"
 	"github.com/reciideo-lms/lecturer/utils"
 	"log"
@@ -102,6 +103,22 @@ func (r *Repo) GetAll() ([]*Lecturer, error) {
 	}
 
 	return items, nil
+}
+
+func (r *Repo) GetSingle(uuid string) (Lecturer, error) {
+	var item Lecturer
+	row := r.DB.QueryRow("SELECT * FROM lecturer WHERE id=$1", uuid)
+	err := row.Scan(&item.Id, &item.Forename, &item.Surname, &item.Username, &item.Description, &item.UpdatedAt, &item.CreatedAt)
+	if err == sql.ErrNoRows {
+		return Lecturer{}, errors.New("NotFound")
+	} else if err != nil {
+		return Lecturer{}, err
+	}
+	item.Platforms, err = r.getPlatforms(&item)
+	if err != nil {
+		return Lecturer{}, err
+	}
+	return item, nil
 }
 
 func slugUsername(forename string, surname string) (string, error) {
