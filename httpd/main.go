@@ -20,6 +20,7 @@ func main() {
 	l.GET("/", handler.LecturerGet(repo))
 	l.GET("/:id", handler.LecturerGetSingle(repo))
 	l.POST("/", handler.LecturerPost(repo))
+	l.DELETE("/:id", handler.LecturerDelete(repo))
 
 	err := r.Run()
 	if err != nil {

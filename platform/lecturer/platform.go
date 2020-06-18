@@ -50,3 +50,8 @@ func (r *Repo) getPlatforms(item *Lecturer) ([]Platform, error) {
 	}
 	return platforms, nil
 }
+
+func (r *Repo) deletePlatforms(id string) error {
+	_, err := r.DB.Exec("DELETE FROM platform WHERE lecturerId=$1", id)
+	return err
+}

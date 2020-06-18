@@ -121,6 +121,15 @@ func (r *Repo) GetSingle(uuid string) (Lecturer, error) {
 	return item, nil
 }
 
+func (r *Repo) Delete(uuid string) error {
+	err := r.deletePlatforms(uuid)
+	if err != nil {
+		return err
+	}
+	_, err = r.DB.Exec("DELETE FROM lecturer WHERE id=$1", uuid)
+	return err
+}
+
 func slugUsername(forename string, surname string) (string, error) {
 	sluggedForename, err := utils.SlugString(forename)
 	if err != nil {
