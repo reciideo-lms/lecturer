@@ -1,4 +1,4 @@
-FROM golang AS builder
+FROM golang:1.14 AS builder
 
 ENV GO111MODULE=on
 
@@ -12,6 +12,8 @@ COPY go.sum .
 RUN go mod download
 
 COPY . .
+
+RUN go test ./...
 
 RUN CGO_ENABLED=0 go build -o lecturer httpd/main.go
 
