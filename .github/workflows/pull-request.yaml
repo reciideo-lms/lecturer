@@ -8,18 +8,41 @@ on:
       - reopened
 
 jobs:
-  build:
+  install:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
+      - uses: actions/cache@v2
+        with:
+          path: ${{ env.GOPATH }}/pkg/mod
+          key: ${{ runner.os }}-mod-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-mod-
+      - run: go mod download
+
+  build:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+      - uses: actions/cache@v2
+        with:
+          path: ${{ env.GOPATH }}/pkg/mod
+          key: ${{ runner.os }}-mod-${{ hashFiles('**/go.sum') }}
       - run: go mod download
       - run: go build -o lecturer httpd/main.go
 
   test:
+    needs: install
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
+      - uses: actions/cache@v2
+        with:
+          path: ${{ env.GOPATH }}/pkg/mod
+          key: ${{ runner.os }}-mod-${{ hashFiles('**/go.sum') }}
       - run: go mod download
       - run: go test ./...
