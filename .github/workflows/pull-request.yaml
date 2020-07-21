@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-go@v2
       - uses: actions/cache@v2
         with:
-          path: ${{ env.GOPATH }}/pkg/mod
+          path: $GOPATH/pkg/mod
           key: ${{ runner.os }}-mod-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-mod-
@@ -29,7 +29,7 @@ jobs:
       - uses: actions/setup-go@v2
       - uses: actions/cache@v2
         with:
-          path: ${{ env.GOPATH }}/pkg/mod
+          path: $GOPATH/pkg/mod
           key: ${{ runner.os }}-mod-${{ hashFiles('**/go.sum') }}
       - run: go mod download
       - run: go build -o lecturer httpd/main.go
@@ -42,7 +42,7 @@ jobs:
       - uses: actions/setup-go@v2
       - uses: actions/cache@v2
         with:
-          path: ${{ env.GOPATH }}/pkg/mod
+          path: $GOPATH/pkg/mod
           key: ${{ runner.os }}-mod-${{ hashFiles('**/go.sum') }}
       - run: go mod download
       - run: go test ./...
