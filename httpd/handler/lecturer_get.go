@@ -6,15 +6,15 @@ import (
 	"net/http"
 )
 
-func LecturerGet(repo *lecturer.Repo) gin.HandlerFunc {
+func LecturerGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		results, err := repo.GetAll()
+		items, err := lecturer.GetAll()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
 			})
 		} else {
-			c.JSON(http.StatusOK, results)
+			c.JSON(http.StatusOK, items)
 		}
 	}
 }

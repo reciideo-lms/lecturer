@@ -10,6 +10,7 @@ services:
       - 8080:8080
     environment:
       DB_CONNECTION_STRING: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/lecturer?sslmode=disable
+      GORM_CONN_STR: host=postgres port=5432 user=${POSTGRES_USER} dbname=lecturer password=${POSTGRES_PASSWORD} sslmode=disable
       GIN_MODE: debug
   postgres:
     image: postgres

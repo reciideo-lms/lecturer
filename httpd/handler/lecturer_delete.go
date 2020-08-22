@@ -6,10 +6,10 @@ import (
 	"net/http"
 )
 
-func LecturerDelete(repo *lecturer.Repo) gin.HandlerFunc {
+func LecturerDelete() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
-		err := repo.Delete(id)
+		err := lecturer.Delete(id)
 		if err == nil {
 			c.Writer.WriteHeader(http.StatusNoContent)
 		} else {

@@ -6,18 +6,14 @@ import (
 	"net/http"
 )
 
-func LecturerGetSingle(repo *lecturer.Repo) gin.HandlerFunc {
+func LecturerGetSingle() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
-		result, err := repo.GetSingle(id)
-		if err != nil && err.Error() == "NotFound" {
+		item, err := lecturer.GetSingle(id)
+		if err != nil {
 			c.AbortWithStatus(http.StatusNotFound)
-		} else if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
 		} else {
-			c.JSON(http.StatusOK, result)
+			c.JSON(http.StatusOK, item)
 		}
 	}
 }

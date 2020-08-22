@@ -1,133 +1,70 @@
 package lecturer
 
 import (
-	"database/sql"
-	"errors"
 	"github.com/google/uuid"
+	"github.com/jinzhu/gorm"
+	"github.com/reciideo-lms/lecturer/config"
 	"github.com/reciideo-lms/lecturer/utils"
-	"log"
 	"time"
 )
 
 type Lecturer struct {
-	Id          uuid.UUID  `json:"id"`
+	ID          string     `json:"id" sql:"type:uuid;primary_key"`
 	Forename    string     `json:"forename"`
 	Surname     string     `json:"surname"`
 	Username    string     `json:"username"`
 	Description string     `json:"description"`
-	Platforms   []Platform `json:"platforms"`
+	Platforms   []Platform `json:"platforms" gorm:"ForeignKey:LecturerID"`
 	UpdatedAt   time.Time  `json:"updatedAt"`
 	CreatedAt   time.Time  `json:"createdAt"`
+	DeletedAt   *time.Time `json:"deletedAt,omitempty"`
 }
 
-type Repo struct {
-	DB *sql.DB
+type Platform struct {
+	ID         string `json:"id" gorm:"primary_key"`
+	LecturerID string `json:"-"`
+	Platform   string `json:"platform"`
+	URL        string `json:"url"`
 }
 
-func New(db *sql.DB) *Repo {
-	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS lecturer (
- 		id UUID PRIMARY KEY UNIQUE,
- 		forename TEXT NOT NULL,
- 		surname TEXT NOT NULL,
- 		username TEXT UNIQUE NOT NULL,
- 		description TEXT,
- 		updatedAt TIMESTAMP,
- 		createdAt TIMESTAMP
-	 );
-	 `)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = initTable(db)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	return &Repo{
-		DB: db,
-	}
+func New() error {
+	return config.DB.AutoMigrate(&Platform{}, &Lecturer{}).Error
 }
 
-func (r *Repo) Add(item Lecturer) (Lecturer, error) {
-	item.Id = uuid.New()
+func Add(item Lecturer) (Lecturer, error) {
 	username, err := slugUsername(item.Forename, item.Surname)
 	if err != nil {
 		return Lecturer{}, err
 	}
 	item.Username = username
-	item.CreatedAt = time.Now()
-	item.UpdatedAt = item.CreatedAt
-
-	sqlStatement := `
-		INSERT INTO lecturer (id, forename, surname, username, description, updatedAt, createdAt)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)`
-	_, err = r.DB.Exec(sqlStatement, item.Id, item.Forename, item.Surname, item.Username, item.Description, item.UpdatedAt, item.CreatedAt)
-	if err != nil {
+	if err = config.DB.Create(&item).Error; err != nil {
 		return Lecturer{}, err
 	}
-
-	platforms := make([]Platform, 0)
-	for _, platform := range item.Platforms {
-		processed, err := r.addPlatform(item, platform)
-		if err != nil {
-			return Lecturer{}, err
-		}
-		platforms = append(platforms, processed)
-	}
-	item.Platforms = platforms
-
 	return item, nil
 }
 
-func (r *Repo) GetAll() ([]*Lecturer, error) {
-	rows, err := r.DB.Query("SELECT * FROM lecturer")
-	if err != nil {
+func GetAll() ([]Lecturer, error) {
+	var lecturer []Lecturer
+	if err := config.DB.Find(&lecturer).Error; err != nil {
 		return nil, err
-	}
-
-	items := make([]*Lecturer, 0)
-	for rows.Next() {
-		item := new(Lecturer)
-		err = rows.Scan(&item.Id, &item.Forename, &item.Surname, &item.Username, &item.Description, &item.UpdatedAt, &item.CreatedAt)
-		if err != nil {
-			return nil, err
-		}
-		item.Platforms, err = r.getPlatforms(item)
-		if err != nil {
-			return nil, err
-		}
-		items = append(items, item)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return items, nil
+	} // TODO get related
+	return lecturer, nil
 }
 
-func (r *Repo) GetSingle(uuid string) (Lecturer, error) {
+func GetSingle(uuid string) (Lecturer, error) {
 	var item Lecturer
-	row := r.DB.QueryRow("SELECT * FROM lecturer WHERE id=$1", uuid)
-	err := row.Scan(&item.Id, &item.Forename, &item.Surname, &item.Username, &item.Description, &item.UpdatedAt, &item.CreatedAt)
-	if err == sql.ErrNoRows {
-		return Lecturer{}, errors.New("NotFound")
-	} else if err != nil {
+	if err := config.DB.Where("id = ?", uuid).First(&item).Related(&item.Platforms).Error; err != nil {
 		return Lecturer{}, err
-	}
-	item.Platforms, err = r.getPlatforms(&item)
-	if err != nil {
-		return Lecturer{}, err
-	}
+	} // TODO get related
 	return item, nil
 }
 
-func (r *Repo) Delete(uuid string) error {
-	err := r.deletePlatforms(uuid)
-	if err != nil {
+func Delete(uuid string) error {
+	var item Lecturer
+	if err := config.DB.Where("id = ?", uuid).Delete(&item).Error; err != nil {
 		return err
 	}
-	_, err = r.DB.Exec("DELETE FROM lecturer WHERE id=$1", uuid)
-	return err
+	return nil
 }
 
 func slugUsername(forename string, surname string) (string, error) {
@@ -140,4 +77,12 @@ func slugUsername(forename string, surname string) (string, error) {
 		return "", err
 	}
 	return utils.ConcatStrings(sluggedForename, sluggedSurname), nil
+}
+
+func (lecturer *Lecturer) BeforeCreate(scope *gorm.Scope) error {
+	return scope.SetColumn("ID", uuid.New().String())
+}
+
+func (platform *Platform) BeforeCreate(scope *gorm.Scope) error {
+	return scope.SetColumn("ID", uuid.New().String())
 }

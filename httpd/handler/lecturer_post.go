@@ -18,7 +18,7 @@ type lecturerPlatformsPostRequest struct {
 	URL      string `json:"url"`
 }
 
-func LecturerPost(repo *lecturer.Repo) gin.HandlerFunc {
+func LecturerPost() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		requestBody := lecturerPostRequest{}
 
@@ -45,7 +45,8 @@ func LecturerPost(repo *lecturer.Repo) gin.HandlerFunc {
 			Description: requestBody.Description,
 			Platforms:   platforms,
 		}
-		result, err := repo.Add(item)
+
+		result, err := lecturer.Add(item)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
