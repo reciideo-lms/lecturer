@@ -9,7 +9,7 @@ import (
 )
 
 type Lecturer struct {
-	ID          string     `json:"id" sql:"type:uuid;primary_key"`
+	ID          string     `json:"id" gorm:"type:uuid;primary_key"`
 	Forename    string     `json:"forename"`
 	Surname     string     `json:"surname"`
 	Username    string     `json:"username"`
@@ -21,8 +21,8 @@ type Lecturer struct {
 }
 
 type Platform struct {
-	ID         string `json:"id" gorm:"primary_key"`
-	LecturerID string `json:"-"`
+	ID         string `json:"id" gorm:"type:uuid;primary_key"`
+	LecturerID string `json:"-" gorm:"type:uuid"`
 	Platform   string `json:"platform"`
 	URL        string `json:"url"`
 }
@@ -45,17 +45,17 @@ func Add(item Lecturer) (Lecturer, error) {
 
 func GetAll() ([]Lecturer, error) {
 	var lecturer []Lecturer
-	if err := config.DB.Find(&lecturer).Error; err != nil {
+	if err := config.DB.Preload("Platforms").Find(&lecturer).Error; err != nil {
 		return nil, err
-	} // TODO get related
+	}
 	return lecturer, nil
 }
 
 func GetSingle(uuid string) (Lecturer, error) {
 	var item Lecturer
-	if err := config.DB.Where("id = ?", uuid).First(&item).Related(&item.Platforms).Error; err != nil {
+	if err := config.DB.Preload("Platforms").Where("id = ?", uuid).First(&item).Error; err != nil {
 		return Lecturer{}, err
-	} // TODO get related
+	}
 	return item, nil
 }
 
